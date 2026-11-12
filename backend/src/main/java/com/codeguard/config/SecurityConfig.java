@@ -28,7 +28,7 @@ public class SecurityConfig {
                 org.springframework.security.web.access.intercept.AuthorizationFilter.class)
             .csrf(csrf -> csrf.ignoringRequestMatchers(PathPatternRequestMatcher.withDefaults().matcher(org.springframework.http.HttpMethod.POST, "/api/webhooks/github")))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/health", "/api/system", "/api/csrf", "/api/auth/config", "/oauth2/**", "/login/oauth2/**").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/prometheus", "/api/system", "/api/csrf", "/api/auth/config", "/oauth2/**", "/login/oauth2/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/webhooks/github").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/demo").permitAll()
                 .anyRequest().authenticated())
