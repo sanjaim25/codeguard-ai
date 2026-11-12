@@ -43,3 +43,20 @@ Alert on unhealthy instances, growing unsent outbox/queued-job age, dead-letter 
 For suspected credential exposure, disable the affected integration, rotate credentials at the provider, replace mounted/environment secrets and restart the application. Revoke OAuth authorization as needed. For a repository incident, disable its review/publishing policies and remove App access. An already-started external call may finish; consent changes cannot recall data already transmitted.
 
 Review results include private diffs and findings. The application has no automated retention/purge scheduler or self-service account deletion yet. Define retention before a public launch and implement an audited, dependency-aware purge procedure; database backups must follow the same retention policy. Do not represent this local project as compliance-certified or production-operated.
+
+
+## Shared session storage (horizontal scaling)
+
+By default (`SESSION_STORE_TYPE=none`) sessions are stored in server memory and are lost on restart. To enable Redis-backed sessions for multi-instance deployments:
+
+1. Start Redis: `docker compose --profile session up -d redis`
+2. Set environment variables:
+   ```
+   SESSION_STORE_TYPE=redis
+   REDIS_HOST=<your-redis-host>
+   REDIS_PORT=6379
+   REDIS_PASSWORD=<your-redis-password>
+   ```
+3. Restart the backend. Sessions now survive restarts and are shared across replicas.
+
+> **Security**: Always use Redis AUTH (`REDIS_PASSWORD`) and TLS in production. Never expose Redis without network-level access controls and authentication.
