@@ -5,6 +5,7 @@ import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
 import {Loading,ErrorState} from './Common';
 import {DiffViewer} from './DiffViewer';
 import {parseDiff} from './diff';
+import {ToastProvider,useToast} from './Toast';
 import {Repositories} from '../pages/Repositories';
 import {api,ApiError} from '../api/client';
 import type {ChangedFile,Finding,Page,Repository} from '../api/types';
@@ -22,4 +23,19 @@ describe('workspace states',()=>{
 describe('safe diff review',()=>{
   it('tracks both sides across hunks and distinguishes removed lines',()=>{const lines=parseDiff('@@ -3,2 +3,3 @@\n context\n-old\n+new\n+extra\n@@ -20 +21 @@\n-old\n+last\n');expect(lines.filter(line=>line.kind==='added').map(line=>line.newLine)).toEqual([4,5,21]);expect(lines.filter(line=>line.kind==='removed').map(line=>line.oldLine)).toEqual([4,20]);});
   it('renders untrusted text safely and links a finding to an added line',()=>{const files:ChangedFile[]=[{path:'src/A.java',status:'modified',patch:'@@ -1 +1 @@\n-old\n+<img src=x onerror=alert(1)>\n',addedLines:[1],truncated:false}];const findings:Finding[]=[{id:'finding',data:{title:'Review input',description:'<script>alert(1)</script>',filePath:'src/A.java',line:1,severity:'HIGH',category:'SECURITY',suggestedFix:'Validate input',confidence:.8,explanation:'Untrusted input reaches an interpreter.'}}];const view=render(<DiffViewer files={files} findings={findings}/>);expect(view.container.querySelector('img')).toBeNull();expect(view.container.querySelector('script')).toBeNull();expect(screen.getByText('<script>alert(1)</script>')).toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'1 finding at line 1'}));expect(view.container.querySelector('.focused-line')).toHaveTextContent('img');expect(screen.getByText('Validate input')).toBeVisible();fireEvent.change(screen.getByRole('combobox',{name:'Filter findings by severity'}),{target:{value:'LOW'}});expect(screen.getByText('No matching findings')).toBeInTheDocument();});
+});
+describe('toast notifications',()=>{
+  it('renders and auto-dismisses toast',()=>{
+    vi.useFakeTimers();
+    function TestComponent() {
+      const toast = useToast();
+      return <button onClick={()=>toast.success('Review saved')}>Trigger</button>;
+    }
+    render(<ToastProvider><TestComponent/></ToastProvider>);
+    fireEvent.click(screen.getByRole('button',{name:'Trigger'}));
+    expect(screen.getByRole('alert')).toHaveTextContent('Review saved');
+    act(()=>{vi.advanceTimersByTime(4100);});
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    vi.useRealTimers();
+  });
 });
