@@ -23,6 +23,16 @@ spring:
         prefetch: 1
         concurrency: ${REVIEW_CONCURRENCY:2}
         default-requeue-rejected: false
+  session:
+    store-type: ${SESSION_STORE_TYPE:none}
+    redis:
+      namespace: codeguard:session
+      flush-mode: on-save
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
 server:
   port: 8080
   forward-headers-strategy: framework
@@ -42,10 +52,15 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: never
+    prometheus:
+      enabled: ${METRICS_ENABLED:false}
+  metrics:
+    tags:
+      application: codeguard-ai
 codeguard:
   demo: ${DEMO_MODE:false}
   github:
@@ -71,6 +86,15 @@ codeguard:
     output-per-million: ${AI_OUTPUT_PER_MILLION:1.60}
   queue:
     enabled: ${QUEUE_ENABLED:true}
+  retention:
+    enabled: ${RETENTION_ENABLED:false}
+    cron: ${RETENTION_CRON:0 0 2 * * *}
+    default-days: ${RETENTION_DEFAULT_DAYS:90}
+    delivery-days: ${RETENTION_DELIVERY_DAYS:30}
+    audit-days: ${RETENTION_AUDIT_DAYS:180}
+  admin:
+    enabled: ${ADMIN_ENABLED:false}
+  metrics-enabled: ${METRICS_ENABLED:false}
 springdoc:
   swagger-ui:
     path: /api/docs
