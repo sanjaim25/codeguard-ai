@@ -1,0 +1,76 @@
+spring:
+  application:
+    name: codeguard-ai
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/codeguard}
+    username: ${DATABASE_USER:codeguard}
+    password: ${DATABASE_PASSWORD:codeguard-local}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    username: ${RABBITMQ_USER:codeguard}
+    password: ${RABBITMQ_PASSWORD:codeguard-local}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        auto-startup: ${QUEUE_ENABLED:true}
+        prefetch: 1
+        concurrency: ${REVIEW_CONCURRENCY:2}
+        default-requeue-rejected: false
+server:
+  port: 8080
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        secure: ${COOKIE_SECURE:true}
+        same-site: lax
+  error:
+    include-message: never
+management:
+  health:
+    rabbit:
+      enabled: ${QUEUE_ENABLED:true}
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+codeguard:
+  demo: ${DEMO_MODE:false}
+  github:
+    auth-enabled: ${GITHUB_AUTH_ENABLED:false}
+    client-id: ${GITHUB_CLIENT_ID:}
+    client-secret: ${GITHUB_CLIENT_SECRET:}
+    app-id: ${GITHUB_APP_ID:}
+    app-slug: ${GITHUB_APP_SLUG:}
+    private-key-path: ${GITHUB_PRIVATE_KEY_PATH:}
+    webhook-secret: ${GITHUB_WEBHOOK_SECRET:}
+    api-url: https://api.github.com
+  ai:
+    provider: ${AI_PROVIDER:mock}
+    base-url: ${AI_BASE_URL:https://api.openai.com/v1}
+    api-key: ${AI_API_KEY:}
+    model: ${AI_MODEL:gpt-4.1-mini}
+    max-diff-chars: ${AI_MAX_DIFF_CHARS:40000}
+    max-output-tokens: ${AI_MAX_OUTPUT_TOKENS:4000}
+    max-input-tokens: ${AI_MAX_INPUT_TOKENS:64000}
+    concurrency: ${AI_CONCURRENCY:2}
+    max-cost-usd: ${AI_MAX_COST_USD:0.05}
+    input-per-million: ${AI_INPUT_PER_MILLION:0.40}
+    output-per-million: ${AI_OUTPUT_PER_MILLION:1.60}
+  queue:
+    enabled: ${QUEUE_ENABLED:true}
+springdoc:
+  swagger-ui:
+    path: /api/docs

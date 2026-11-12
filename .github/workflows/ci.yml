@@ -1,0 +1,115 @@
+name: Verify CodeGuard AI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Java, PostgreSQL and RabbitMQ tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+      - name: Run all unit and Testcontainers integration tests
+        run: mvn -B -ntp -f backend/pom.xml verify
+      - name: Retain test evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: backend-test-reports
+          path: |
+            backend/target/surefire-reports/
+            backend/target/failsafe-reports/
+          retention-days: 7
+
+  frontend:
+    name: TypeScript, component tests and dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Fail on high or critical dependency advisories
+        run: npm audit --audit-level=high
+
+  containers-and-browser:
+    name: Docker image builds, Compose health and browser journey
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DEMO_MODE: 'true'
+      AI_PROVIDER: mock
+      GITHUB_AUTH_ENABLED: 'false'
+      COOKIE_SECURE: 'false'
+      CODEGUARD_BASE_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install browser test dependencies
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Build and start the complete local stack
+        run: |
+          mkdir -p secrets
+          docker compose config --quiet
+          docker compose up --build --wait --wait-timeout 240
+      - name: Verify the served application
+        run: curl --fail --retry 5 --retry-delay 2 http://127.0.0.1:3000/api/system
+      - name: Exercise the real demo browser journey
+        working-directory: frontend
+        run: npm run test:e2e
+      - name: Capture container logs
+        if: always()
+        run: docker compose logs --no-color > compose.log 2>&1
+      - name: Retain browser and container evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: compose-browser-evidence
+          path: |
+            compose.log
+            frontend/test-results/
+          retention-days: 7
+      - name: Remove disposable CI containers
+        if: always()
+        run: docker compose down --volumes --remove-orphans

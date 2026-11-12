@@ -1,0 +1,22 @@
+export type Page<T> = {content:T[]; page:number; size:number; totalElements:number; totalPages:number};
+export type Profile = {id:string; login:string; avatarUrl:string|null};
+export type System = {name:string; demo:boolean};
+export type AuthConfig = {githubEnabled:boolean; installationUrl:string};
+export type Repository = {id:string; fullName:string; privateRepository:boolean; language:string|null; reviewEnabled:boolean; cloudAiOptIn:boolean; publishingEnabled:boolean; autoPublish:boolean};
+export type RepositoryDetail = {repository:Repository; canManage:boolean; installationAccount:string};
+export type PullRequest = {id:string; repositoryId:string; repositoryName:string; number:number; title:string; author:string; headSha:string; headRef:string; baseRef:string; state:string; updatedAt:string};
+export type Job = {id:string; commitSha:string; status:string; attempts:number; createdAt:string; startedAt:string|null; completedAt:string|null; failureCode:string|null};
+export type PullRequestDetail = {pullRequest:PullRequest; reviews:Job[]};
+export type Finding = {id:string; data:{title:string; description:string; filePath:string|null; line:number|null; severity:string; category:string; suggestedFix:string; confidence:number; explanation:string}};
+export type ChangedFile = {path:string; status:string; patch:string; addedLines:number[]; truncated:boolean};
+export type Usage = {provider:string; model:string; inputTokens:number; outputTokens:number; measuredTokens:boolean; estimatedCostUsd:number|null};
+export type Review = {job:Job; provider:string|null; summary:string|null; files:ChangedFile[]; findings:Finding[]; excludedFiles:number; incomplete:boolean; usage:Usage[]};
+export type Analytics = {
+  since:string; until:string;
+  totals:{repositories:number; reviews:number; pullRequestsReviewed:number; completed:number; failed:number; active:number; findings:number; criticalHighFindings:number; averageProcessingSeconds:number|null};
+  severity:{name:string; count:number}[]; category:{name:string; count:number}[];
+  weekly:{week:string; reviews:number; completed:number; failed:number}[];
+  repositories:{id:string; name:string; reviews:number; findings:number; criticalHighFindings:number}[];
+  recent:{jobId:string; pullRequestId:string; repository:string; number:number; title:string; status:string; createdAt:string; findings:number}[];
+  usage:{measuredInputTokens:number; measuredOutputTokens:number; estimatedInputTokens:number; estimatedOutputTokens:number; estimatedCostUsd:number|null; reservedCostUsd:number};
+};

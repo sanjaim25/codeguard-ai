@@ -1,0 +1,2 @@
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'./e2e',fullyParallel:false,workers:1,timeout:45000,retries:0,reporter:'list',use:{baseURL:process.env.CODEGUARD_BASE_URL??'http://127.0.0.1:5173',viewport:{width:1440,height:1050},channel:process.env.CODEGUARD_BROWSER_CHANNEL||undefined,trace:'retain-on-failure',screenshot:'only-on-failure'}});
