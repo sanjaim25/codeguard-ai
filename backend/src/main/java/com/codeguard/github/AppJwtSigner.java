@@ -9,6 +9,7 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Clock;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -16,15 +17,22 @@ import org.springframework.stereotype.Component;
 public class AppJwtSigner {
     private final String issuer;
     private final String keyPath;
+    private final String inlineKey;
     private final Clock clock;
+    public AppJwtSigner(String issuer, String keyPath, Clock clock) {
+        this(issuer, keyPath, "", clock);
+    }
+    @Autowired
     public AppJwtSigner(@Value("${codeguard.github.app-id:}") String issuer,
-                        @Value("${codeguard.github.private-key-path:}") String keyPath, Clock clock) {
-        this.issuer = issuer; this.keyPath = keyPath; this.clock = clock;
+                        @Value("${codeguard.github.private-key-path:}") String keyPath,
+                        @Value("${codeguard.github.private-key:}") String inlineKey,
+                        Clock clock) {
+        this.issuer = issuer; this.keyPath = keyPath; this.inlineKey = inlineKey; this.clock = clock;
     }
     public String sign() {
-        if (issuer.isBlank() || keyPath.isBlank()) throw new IllegalStateException("GitHub App credentials are not configured");
+        if (issuer.isBlank() || (keyPath.isBlank() && inlineKey.isBlank())) throw new IllegalStateException("GitHub App credentials are not configured");
         try {
-            String pem = Files.readString(Path.of(keyPath));
+            String pem = !inlineKey.isBlank() ? inlineKey.replace("\\n", "\n") : Files.readString(Path.of(keyPath));
             if (!pem.contains("-----BEGIN PRIVATE KEY-----")) throw new IllegalStateException("GitHub key must be unencrypted PKCS8");
             byte[] der = Base64.getMimeDecoder().decode(pem.replace("-----BEGIN PRIVATE KEY-----", "").replace("-----END PRIVATE KEY-----", ""));
             var key = (RSAPrivateKey) KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(der));

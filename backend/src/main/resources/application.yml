@@ -11,6 +11,7 @@ spring:
       ddl-auto: validate
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:codeguard}
     password: ${RABBITMQ_PASSWORD:codeguard-local}
     publisher-confirm-type: correlated
@@ -29,7 +30,7 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
 server:
-  port: 8080
+  port: ${PORT:8080}
   forward-headers-strategy: framework
   servlet:
     session:
@@ -67,6 +68,7 @@ codeguard:
     app-id: ${GITHUB_APP_ID:}
     app-slug: ${GITHUB_APP_SLUG:}
     private-key-path: ${GITHUB_PRIVATE_KEY_PATH:}
+    private-key: ${GITHUB_PRIVATE_KEY:}
     webhook-secret: ${GITHUB_WEBHOOK_SECRET:}
     api-url: https://api.github.com
   ai:
