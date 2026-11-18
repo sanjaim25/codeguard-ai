@@ -1,7 +1,9 @@
 package com.codeguard.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 
 /**
@@ -10,8 +12,9 @@ import org.springframework.session.data.redis.config.annotation.web.http.EnableR
  * See docs/DEPLOYMENT.md for horizontal scaling instructions.
  */
 @Configuration
-@ConditionalOnProperty(name = "spring.session.store-type", havingValue = "redis")
+@ConditionalOnProperty(name = "codeguard.session.store-type", havingValue = "redis")
+@Import(RedisAutoConfiguration.class)
 @EnableRedisHttpSession(maxInactiveIntervalInSeconds = 28800) // 8 hours, matches server.servlet.session.timeout
 public class RedisSessionConfig {
-    // Spring Session auto-configures the RedisConnectionFactory via spring.data.redis.*
+    // Imports RedisAutoConfiguration only when Redis sessions are explicitly enabled.
 }

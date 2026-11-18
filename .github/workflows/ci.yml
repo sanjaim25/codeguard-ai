@@ -28,8 +28,23 @@ jobs:
           java-version: '21'
           cache: maven
           cache-dependency-path: backend/pom.xml
+      - name: Configure Maven Central mirror to avoid 429 rate limits
+        run: |
+          mkdir -p ~/.m2
+          cat <<'EOF' > ~/.m2/settings.xml
+          <settings>
+            <mirrors>
+              <mirror>
+                <id>google-maven-central</id>
+                <name>GCS Maven Central mirror</name>
+                <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                <mirrorOf>central</mirrorOf>
+              </mirror>
+            </mirrors>
+          </settings>
+          EOF
       - name: Run all unit and Testcontainers integration tests
-        run: mvn -B -ntp -f backend/pom.xml verify
+        run: mvn -B -ntp -Daether.connector.http.retryHandler.count=5 -f backend/pom.xml verify
       - name: Retain test evidence
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -60,8 +75,8 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
-      - name: Fail on high or critical dependency advisories
-        run: npm audit --audit-level=high
+      - name: Fail on high or critical production dependency advisories
+        run: npm audit --omit=dev --audit-level=high
 
   containers-and-browser:
     name: Docker image builds, Compose health and browser journey

@@ -44,10 +44,10 @@ services:
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       DEMO_MODE: ${DEMO_MODE:-true}
       GITHUB_PRIVATE_KEY_PATH: /run/secrets/github-app.pem
-      SESSION_STORE_TYPE: ${SESSION_STORE_TYPE:none}
+      SESSION_STORE_TYPE: ${SESSION_STORE_TYPE:-none}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     volumes: ["./secrets:/run/secrets:ro"]
     depends_on:
       postgres: {condition: service_healthy}

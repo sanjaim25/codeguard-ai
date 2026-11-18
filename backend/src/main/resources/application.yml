@@ -23,11 +23,6 @@ spring:
         prefetch: 1
         concurrency: ${REVIEW_CONCURRENCY:2}
         default-requeue-rejected: false
-  session:
-    store-type: ${SESSION_STORE_TYPE:none}
-    redis:
-      namespace: codeguard:session
-      flush-mode: on-save
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -49,6 +44,8 @@ management:
   health:
     rabbit:
       enabled: ${QUEUE_ENABLED:true}
+    redis:
+      enabled: ${REDIS_HEALTH_ENABLED:false}
   endpoints:
     web:
       exposure:
@@ -86,6 +83,8 @@ codeguard:
     output-per-million: ${AI_OUTPUT_PER_MILLION:1.60}
   queue:
     enabled: ${QUEUE_ENABLED:true}
+  session:
+    store-type: ${SESSION_STORE_TYPE:none}
   retention:
     enabled: ${RETENTION_ENABLED:false}
     cron: ${RETENTION_CRON:0 0 2 * * *}
