@@ -4,7 +4,7 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 RUN npm run build
-FROM nginxinc/nginx-unprivileged:1.28-alpine
+FROM nginxinc/nginx-unprivileged:1.31-alpine
 ENV PORT=8080
 ENV BACKEND_URL=http://backend:8080
 ENV NGINX_ENVSUBST_FILTER=^(BACKEND_URL|PORT)$
