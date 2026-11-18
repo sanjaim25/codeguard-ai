@@ -1,13 +1,13 @@
-# Acceptance audit — 2026-11-10
+# Acceptance audit — 2026-11-18
 
-This audit maps the master prompt to implementation and verification evidence. **The full definition of done is not met:** live GitHub/cloud checks and remote CI execution remain unverified. No external deployment or remote push has been performed.
+This audit maps the master prompt to implementation and verification evidence. All local checks, Docker Compose builds, Playwright browser journeys and remote GitHub Actions CI checks pass (`sanjaim25/codeguard-ai`, run `#15`, commit `07f5991`). Live GitHub App and Cloud AI credential gates remain visibly unverified until real credentials are configured; no public production deployment has been performed.
 
 ## Requirements and evidence
 
 | Master-prompt requirement | Implementation and evidence | Remaining qualification |
 |---|---|---|
 | Java 21/Spring Boot modular monolith; no Python backend or local model dependency | Maven project and feature packages under `backend/src/main/java/com/codeguard`; Java compilation/package passes | Boot 3.5 line selected for JUnit 5 compatibility |
-| PostgreSQL/Flyway/JPA schema, keys, indexes, validation | Migrations V1–V9; Hibernate validate; `FoundationIT` and `RepositoryAccessIT` pass on isolated PostgreSQL and PostgreSQL 17 Testcontainers/Compose | No production database migration is claimed |
+| PostgreSQL/Flyway/JPA schema, keys, indexes, validation | Migrations V1–V10 (including V10 data retention); Hibernate validate; `FoundationIT` and `RepositoryAccessIT` pass on PostgreSQL 17 Testcontainers/Compose locally and in GitHub Actions | No production database migration is claimed |
 | A: GitHub user authentication, session, profile, logout, protected APIs | OAuth user flow and server-session credential repository; `OAuthSecurityTest`, controller/security and demo tests | Real GitHub OAuth requires credentials and callback setup |
 | B: App installation discovery, JWT/tokens, retrieval, HMAC/idempotent webhooks | `github` module; token/client/signature tests and database discovery/webhook tests | Real App installation and webhook delivery require configuration |
 | C: review lifecycle, outbox, RabbitMQ, retries/DLQ, duplicate protection | `review` and `queue` modules; database worker transactions, lease fencing, retries and scheduler starvation regression pass; `RabbitTransportIT` passes against real RabbitMQ | No production broker deployment is claimed |
@@ -17,12 +17,12 @@ This audit maps the master prompt to implementation and verification evidence. *
 | G: manual/automatic publishing, policy, commit/line validation, duplicate prevention | `publishing` module, V8, preview UI; mocked GitHub and separate database transaction tests | Live posting unverified; ambiguous submissions are never automatically re-POSTed |
 | H: real scoped analytics, weekly/severity/category/repository/duration/usage/cost | SQL aggregates through valid repository grants; API integration tests and charts | Costs estimated; token measurements explicitly distinguished |
 | Security: resource isolation, CSRF, validation, safe errors, headers, rate limits, no raw HTML/code execution | Security chain and resource grants; authorization/CSRF/rate-limit tests; safe React rendering; credential-free source scan; metadata-only structured webhook/review lifecycle logs exercised in integration tests | Not a penetration test. Shared ingress limits/TLS/encrypted storage are operator responsibilities |
-| Credential storage | OAuth credentials/session and installation cache are server-memory only; key from secret mount; ignored env/key files | Shared/persistent session storage is not implemented; production encryption/backups require infrastructure configuration |
-| Required automated testing | 54 unit/API tests and 27 Testcontainers integration tests pass in the current full backend run with zero skips; 11 frontend component/API tests and four Chrome journeys pass through Compose | See PHASE_STATUS for exact command and scope |
-| Docker development environment | Dockerfiles, health checks, loopback Compose ports, volumes, dependencies and optional Redis profile; images build and PostgreSQL, RabbitMQ, backend and frontend become healthy; browser suite passes through Nginx | Redis is optional infrastructure, not an application cache; this is local verification, not deployment |
-| GitHub Actions | Pinned actions for Java/Testcontainers, frontend lint/test/build/audit, Docker builds and Compose browser journey | YAML parsed locally; workflow has not run on GitHub |
-| Documentation/demonstration/resume | README, architecture, API/OpenAPI, security, phase status, env template, demo/screenshots, App setup, deployment/recovery and resume guides | Local Markdown links checked; operator steps require live verification |
-| Engineering process | Incremental tested changes, local mock default, cost guards, no remote push/deployment | All project source remains uncommitted in the initialized local repository |
+| Credential storage | OAuth credentials/session and installation cache are server-memory by default (`SESSION_STORE_TYPE=none`) with optional Redis-backed Spring Session (`SESSION_STORE_TYPE=redis` + Compose `session` profile); key from secret mount; ignored env/key files | Production Redis TLS/AUTH, database encryption and backups require operator infrastructure configuration |
+| Required automated testing | 55 unit/API tests and 27 Testcontainers integration tests pass with zero skips; 12 frontend component/API tests and four Chrome Playwright journeys pass through Compose both locally and in GitHub Actions (run `#15`) | See PHASE_STATUS for exact command and scope |
+| Docker development environment | Dockerfiles, health checks, loopback Compose ports, volumes, dependencies and optional Redis `session` profile; images build and PostgreSQL, RabbitMQ, backend and frontend become healthy; browser suite passes through Nginx | Local and CI verification complete; not a production deployment |
+| GitHub Actions | Pinned actions for Java/Testcontainers, frontend lint/test/build/audit (`--omit=dev`), Docker builds and Compose browser journey; **VERIFIED** on 2026-11-18 in run `#15` (`07f5991`, 4m 1s, 2 artifacts) | Remote CI gate satisfied |
+| Documentation/demonstration/resume | README, architecture, API/OpenAPI, security, phase status, env template, demo/screenshots, App setup, deployment/recovery, contributing guide and resume guides | Local Markdown links checked; operator steps require live verification |
+| Engineering process | Incremental tested changes, local mock default, cost guards, committed on `main` and tagged (`v1.0.0`, `v1.1.0`) | Live credential gates remain separate operator steps |
 
 ## Current command evidence
 
@@ -38,7 +38,8 @@ This audit maps the master prompt to implementation and verification evidence. *
 
 1. Configure a disposable GitHub App/repository using [GITHUB_SETUP.md](GITHUB_SETUP.md). Verify real OAuth, signed deliveries, commit deduplication, installation removal and [publishing](PUBLISHING.md).
 2. Supply a provider key through a secret store and perform one explicitly cost-bounded live review using [AI.md](AI.md), including private-repository consent behavior.
-3. If a remote repository is authorized later, push and execute the authored CI workflow; inspect job artifacts. No remote action is assumed authorized by this audit.
+
+*(Gate 3 — remote GitHub Actions CI execution and artifact inspection — was satisfied on 2026-11-18 in run `#15` / commit `07f5991`.)*
 
 ## Local review conclusion
 

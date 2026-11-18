@@ -9,15 +9,16 @@ Evidence is recorded here as each phase is implemented. No live integration is i
 | 3 GitHub integration | IMPLEMENTED; LIVE UNVERIFIED | GitHub App user OAuth, JWT signing, cached installation tokens, discovery, bounded PR retrieval, HMAC webhooks, delivery/commit deduplication and removal/revocation handling tested with mocked GitHub responses. |
 | 4 Review engine | IMPLEMENTED; BROKER VERIFIED | Confirmed persistent RabbitMQ transport, outbox relay, recovery scheduling, fenced leases, bounded retries, DLQ and transactional worker implemented. Real PostgreSQL worker transactions, RabbitMQ Testcontainers transport and the Compose broker path pass. |
 | 5 AI integration | IMPLEMENTED; LIVE UNVERIFIED | Mock and OpenAI Responses-compatible providers, strict validation, location mapping, consent, input/output limits, concurrency and durable cumulative cost reservations tested. No live paid calls made. |
-| 6 Frontend | IMPLEMENTED | Responsive dark dashboard with a persistent accessible light appearance, landing/sign-in, repositories/policies, PR history, safe syntax-highlighted diff viewer, finding filters, analytics, publishing preview/status and settings connected to APIs. Eleven component/API tests pass; production build and lint pass. |
+| 6 Frontend | IMPLEMENTED; CI VERIFIED | Responsive dark dashboard with a persistent accessible light appearance, landing/sign-in, repositories/policies, PR history, safe syntax-highlighted diff viewer, finding filters, analytics, publishing preview/status, global toast notifications and settings connected to APIs. Twelve component/API tests pass; production build, lint and Playwright E2E journeys pass locally and in GitHub Actions. |
 | 7 Publishing | IMPLEMENTED; LIVE UNVERIFIED | Manual and opt-in automatic publishing, durable single-attempt dispatch, fresh SHA/line validation, scoped authorization, safe Markdown and read-only reconciliation tested with PostgreSQL and mocked GitHub. Live verification instructions in docs/PUBLISHING.md. |
-| 8 Hardening | LOCAL CHECKS PASS; EXTERNAL GATES REMAIN | Pinned CI workflow, bounded request limits, proxy sanitization, scheduler isolation, safe structured lifecycle logs and authorization-race protection implemented. Full backend verification passes with no skipped tests, and Compose browser smoke passes. Live credentials and remote CI execution remain unverified. |
-| 9 Documentation | IMPLEMENTED AND AUDITED | README, architecture, API, security, App setup, deployment/recovery, demo, CI, publishing and evidence-based resume guides are present. Requirement-to-evidence audit records the unresolved external gates; local Markdown links resolve. |
+| 8 Hardening | CI VERIFIED; LIVE CREDENTIAL GATES REMAIN | Pinned CI workflow, bounded request limits, proxy sanitization, scheduler isolation, safe structured lifecycle logs, authorization-race protection (V9), scheduled data retention (V10), optional Redis session storage, optional Prometheus/admin queue observability implemented. Full backend verification, frontend checks and Docker/Playwright E2E pass in GitHub Actions (run #15, commit `07f5991`). Live GitHub/AI credentials remain unverified. |
+| 9 Documentation | IMPLEMENTED AND AUDITED | README, architecture, API, security, App setup, deployment/recovery, demo, CI, publishing, contributing guide and evidence-based resume guides are present. Requirement-to-evidence audit records the remaining live credential gates; local Markdown links resolve. |
 
 ## External verification
+- GitHub Actions CI: VERIFIED on 2026-11-18 — `sanjaim25/codeguard-ai` run `#15` (commit `07f5991`) passed all 3 jobs (`backend`, `frontend`, `containers-and-browser`) in 4m 1s and uploaded both evidence artifacts.
+- Docker Compose / RabbitMQ: VERIFIED locally (2026-11-10) and in GitHub Actions (2026-11-18) — both images build, PostgreSQL 17, RabbitMQ 4, backend and frontend start healthy, and all 4 Playwright Chrome journeys pass through Nginx.
 - GitHub OAuth / App / publishing: UNVERIFIED — credentials and installed GitHub App required.
 - Cloud AI: UNVERIFIED — provider API key required.
-- Docker Compose / RabbitMQ: VERIFIED locally on 2026-11-10 — Docker Engine 29.5.2 built both images, healthy Compose services and the browser suite passed. This is not a production deployment or remote CI result.
 
 ## Verification log — 2026-10-13
 - `frontend: npm.cmd test`: PASS, 4 tests (session cookies, CSRF, API errors, same-origin restriction).
@@ -34,10 +35,9 @@ Evidence is recorded here as each phase is implemented. No live integration is i
 - Latest repository/PR API and lifecycle suite: PASS, 10 unit/API tests + 6 real PostgreSQL integration tests, 0 skipped. Covers CSRF, validation, safe 404s, cross-user isolation, write permission, audit persistence, commit uniqueness, cancellation, lease fencing and retry bounds. Migrations V1–V4 validated. Executable JAR packaged successfully.
 
 ## Next implementation steps
-1. Configure the disposable GitHub App and provider credentials through local secret storage, then run the documented live verification.
-2. Execute the authored GitHub Actions workflow if a remote push is explicitly authorized. No remote push or deployment has occurred.
+1. Configure a disposable GitHub App and provider credentials through local secret storage, then run the documented live verification (GitHub OAuth, signed webhooks, Cloud AI review and live publishing).
 
-The overall project is **not complete**. No live OAuth, GitHub review, cloud AI call, remote CI run or deployment has been claimed as verified.
+Live OAuth, GitHub review publishing, cloud AI calls and production deployment remain **unverified** until configured with real credentials. All code, local tests, Docker Compose builds and remote GitHub Actions CI checks pass.
 
 The requirement-to-evidence mapping and outstanding gates are in [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md).
 
@@ -87,3 +87,14 @@ The requirement-to-evidence mapping and outstanding gates are in [docs/ACCEPTANC
 - Safe structured lifecycle logging was added for webhook deduplication/processing and review claim, completion, cancellation and deferral outcomes. Full backend verify then passed again with 54 unit/API tests and 27 Testcontainers integration tests, zero skips. The exercised logs contain controlled event names, IDs, outcome/status values and counts—not payloads, tokens, diffs or exception messages.
 - The updated backend image was rebuilt from source in Docker and the complete Compose stack again reached healthy PostgreSQL, RabbitMQ, backend and frontend services. `GET /api/system` through Nginx returned the expected demo configuration; containers and network were then removed while named volumes were preserved.
 - Added a sanitized private live-verification record template that covers GitHub OAuth/App access, signed PR deliveries, cloud AI consent/cost evidence, publishing and authorized remote CI. It is explicitly a copy-outside-the-repository artifact and contains no credential fields or private-code capture.
+
+## Verification log — 2026-11-18
+
+- Implemented operational enhancements on `main`: Flyway V10 scheduled data retention (`RetentionCleanupService` + `RetentionCleanupServiceTest`), optional Redis-backed HTTP sessions (`RedisSessionConfig` behind `SESSION_STORE_TYPE=redis` + Compose `session` profile), optional Prometheus metrics (`/actuator/prometheus`) and protected admin queue/DLQ inspector (`AdminController`), global frontend toast notifications (`Toast.tsx`, 12/12 Vitest tests passing), `.dockerignore` files and `CONTRIBUTING.md`.
+- Pushed `main` and release tags (`v1.0.0`, `v1.1.0`) to `https://github.com/sanjaim25/codeguard-ai`.
+- Resolved initial CI failures in commit `07f5991`: configured Google's Maven Central mirror to prevent Maven Central HTTP 429 rate limits on shared GitHub runners, scoped `npm audit` in CI to production runtime dependencies (`--omit=dev --audit-level=high`, 0 production vulnerabilities; a dev-only `picomatch` advisory affects `vite`/`vitest`), excluded Redis/Session auto-configuration when `SESSION_STORE_TYPE=none`, fixed `compose.yaml` default-value interpolation (`:-`), and configured Dependabot to ignore incompatible Spring Boot 4 / Springdoc 3 major bumps.
+- GitHub Actions run `#15` (`07f5991`) PASSED all 3 jobs in 4m 1s:
+  - `Java, PostgreSQL and RabbitMQ tests` (`1m 18s`) — unit tests, Flyway V1–V10 migrations, PostgreSQL 17 & RabbitMQ Testcontainers
+  - `TypeScript, component tests and dependency audit` (`55s`) — ESLint, Vitest (12/12), Vite build, production `npm audit`
+  - `Docker image builds, Compose health and browser journey` (`2m 37s`) — full Docker Compose stack + 4 Playwright E2E journeys
+  - Uploaded both workflow evidence artifacts (`backend-test-reports`, `compose-browser-evidence`).

@@ -1,8 +1,8 @@
 # CodeGuard AI
 
-AI-assisted GitHub pull request reviews, built with Java 21, Spring Boot, PostgreSQL, RabbitMQ and React. **Under active construction.** See [PHASE_STATUS.md](PHASE_STATUS.md) for verified features and remaining work. AI findings are advisory and never guarantee security or correctness.
+AI-assisted GitHub pull request reviews, built with Java 21, Spring Boot, PostgreSQL, RabbitMQ and React. See [PHASE_STATUS.md](PHASE_STATUS.md) for verified features and remaining live credential gates. AI findings are advisory and never guarantee security or correctness.
 
-The backend includes GitHub App OAuth and webhooks, a durable review worker, diff analysis, mock/cloud AI providers, scoped analytics and manual/opt-in GitHub publishing. The responsive dashboard and local demo are implemented and browser-tested. Local hardening, Docker/Compose and documentation are verified; CI is authored but has not run remotely. Live integrations still require credentials. See the [acceptance audit](docs/ACCEPTANCE.md) for the exact evidence and blockers.
+The backend includes GitHub App OAuth and webhooks, a durable review worker, diff analysis, mock/cloud AI providers, scoped analytics, manual/opt-in GitHub publishing, scheduled data retention (V10), optional Redis session storage and Prometheus/admin queue observability. The responsive dashboard and local demo are implemented and browser-tested. Local hardening, Docker/Compose, documentation and GitHub Actions CI (backend Testcontainers, frontend checks and Docker/Playwright E2E) are all verified. Live GitHub and Cloud AI integrations still require operator credentials. See the [acceptance audit](docs/ACCEPTANCE.md) for exact evidence.
 
 See [publishing behavior and verification](docs/PUBLISHING.md) and [CI checks](docs/CI.md).
 
